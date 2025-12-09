@@ -1,0 +1,72 @@
+{
+  "D4PQ": {
+    "page1_serial": {
+      "x": 395.92,
+      "y": 642.58,
+      "size": 14.0,
+      "sample": "D4PQ236599Activate"
+    },
+    "page2_serial": {
+      "x": 382.82,
+      "y": 677.62,
+      "size": 14.0,
+      "sample": "D4PQ236599"
+    }
+  },
+  "SOSP": {
+    "page1_serial": {
+      "x": 395.92,
+      "y": 636.58,
+      "size": 14.0,
+      "sample": "SOSP215459Activate"
+    },
+    "page2_serial": {
+      "x": 382.82,
+      "y": 687.62,
+      "size": 14.0,
+      "sample": "SOSP215459r"
+    }
+  },
+  "SCSQ": {
+    "page1_serial": {
+      "x": 395.92,
+      "y": 636.58,
+      "size": 14.0,
+      "sample": "SCSQ175392Activate"
+    },
+    "page2_serial": {
+      "x": 382.82,
+      "y": 687.62,
+      "size": 14.0,
+      "sample": "SCSQ175392r"
+    }
+  },
+  "D4SQ": {
+    "page1_serial": {
+      "x": 395.92,
+      "y": 642.58,
+      "size": 14.0,
+      "sample": "D4SQ106733Activate"
+    },
+    "page2_serial": {
+      "x": 382.82,
+      "y": 677.62,
+      "size": 14.0,
+      "sample": "D4SQ106733r"
+    }
+  },
+  "SHSP": {
+    "page1_serial": {
+      "x": 395.92,
+      "y": 636.58,
+      "size": 14.0,
+      "sample": "SHSP085112Activate"
+    },
+    "page2_serial": {
+      "x": 382.82,
+      "y": 687.62,
+      "size": 14.0,
+      "sample": "SHSP085112r"
+    }
+  }
+}

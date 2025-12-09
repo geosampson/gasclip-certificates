@@ -14,6 +14,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.colors import black, white
 import io
+from product_coordinates import get_coordinates
 
 
 class DateEntry(ttk.Entry):
@@ -338,63 +339,67 @@ class GasClipCertificateGenerator:
         
         return True
     
-    def create_text_overlay(self, data):
+    def create_text_overlay(self, data, prefix):
         """Create PDF overlay with white rectangles to cover old text, then add new text"""
+        # Get coordinates for this product
+        coords = get_coordinates(prefix)
+        
         packet = io.BytesIO()
         can = canvas.Canvas(packet, pagesize=A4)
         
-        # Page 1 - Cover old text with white rectangles, then add new text
+        # Page 1 - Cover old text with white rectangles at EXACT coordinates, then add new text
         
-        # Cover and replace serial number (top right)
+        # Cover and replace serial number in middle section (Serial Number box)
+        p1_serial = coords["page1"]["serial"]
         can.setFillColor(white)
-        can.rect(480, 710, 120, 30, fill=1, stroke=0)  # Cover old serial and activation
+        can.rect(p1_serial["x"] - 1, p1_serial["y"] - 2, 105, 18, fill=1, stroke=0)
         can.setFillColor(black)
-        can.setFont("Helvetica", 10)
-        can.drawString(500, 727, data["serial"])
-        can.drawString(500, 712, f"Activate before: {data['activation']}")
+        can.setFont("Helvetica-Bold", int(p1_serial["size"]))
+        can.drawString(p1_serial["x"], p1_serial["y"], data["serial"])
         
-        # Cover and replace serial number in the middle section (Serial Number box)
+        # Cover and replace activation date (below serial in middle section)
+        p1_act = coords["page1"]["activation_date"]
         can.setFillColor(white)
-        can.rect(580, 275, 130, 25, fill=1, stroke=0)  # Cover old serial in middle
-        can.rect(580, 295, 130, 20, fill=1, stroke=0)  # Cover old activation date below serial
+        can.rect(p1_act["x"], p1_act["y"] - 3, 70, 12, fill=1, stroke=0)
         can.setFillColor(black)
-        can.setFont("Helvetica-Bold", 11)
-        can.drawString(590, 285, data["serial"])
-        can.setFont("Helvetica", 9)
-        can.drawString(590, 300, f"Activate before: {data['activation']}")
+        can.setFont("Helvetica", int(p1_act["size"]))
+        can.drawString(p1_act["x"], p1_act["y"], data["activation"])
         
-        # Cover and replace date in middle section
+        # Cover and replace lot number
+        p1_lot = coords["page1"]["lot"]
         can.setFillColor(white)
-        can.rect(140, 450, 200, 40, fill=1, stroke=0)  # Cover old dates area
+        can.rect(p1_lot["x"], p1_lot["y"] - 2, 85, 16, fill=1, stroke=0)
         can.setFillColor(black)
-        can.setFont("Helvetica", 10)
-        can.drawString(145, 475, data["lot"])
-        can.drawString(145, 460, data["gas_prod"])
+        can.setFont("Helvetica-Bold", int(p1_lot["size"]))
+        can.drawString(p1_lot["x"], p1_lot["y"], data["lot"])
+        
+        # Cover and replace gas production date
+        p1_gas = coords["page1"]["gas_prod"]
+        can.setFillColor(white)
+        can.rect(p1_gas["x"], p1_gas["y"] - 2, 95, 13, fill=1, stroke=0)
+        can.setFillColor(black)
+        can.setFont("Helvetica", int(p1_gas["size"]))
+        can.drawString(p1_gas["x"], p1_gas["y"], data["gas_prod"])
         
         # Cover and replace calibration date
+        p1_cal = coords["page1"]["calibration"]
         can.setFillColor(white)
-        can.rect(185, 545, 120, 20, fill=1, stroke=0)  # Cover old calibration date
+        can.rect(p1_cal["x"], p1_cal["y"] - 2, 95, 16, fill=1, stroke=0)
         can.setFillColor(black)
-        can.setFont("Helvetica-Bold", 11)
-        can.drawString(190, 555, data["calibration"])
+        can.setFont("Helvetica-Bold", int(p1_cal["size"]))
+        can.drawString(p1_cal["x"], p1_cal["y"], data["calibration"])
         
         can.showPage()
         
-        # Page 2 - Cover old text and add new text
-        
-        # Cover and replace serial number (top right)
-        can.setFillColor(white)
-        can.rect(480, 740, 120, 20, fill=1, stroke=0)  # Cover old serial
-        can.setFillColor(black)
-        can.setFont('Helvetica', 10)
-        can.drawString(500, 750, data["serial"])
+        # Page 2 - Cover old text at EXACT coordinates and add new text
         
         # Cover and replace serial number in middle section (sn: box)
+        p2_serial = coords["page2"]["serial"]
         can.setFillColor(white)
-        can.rect(580, 475, 130, 20, fill=1, stroke=0)  # Cover old serial in middle
+        can.rect(p2_serial["x"] - 1, p2_serial["y"] - 2, 105, 18, fill=1, stroke=0)
         can.setFillColor(black)
-        can.setFont('Helvetica-Bold', 11)
-        can.drawString(590, 483, data["serial"])
+        can.setFont('Helvetica-Bold', int(p2_serial["size"]))
+        can.drawString(p2_serial["x"], p2_serial["y"], data["serial"])
         
         # Cover activation date boxes area
         can.setFillColor(white)
@@ -466,7 +471,7 @@ class GasClipCertificateGenerator:
                 return
             
             # Create overlay and merge
-            overlay_pdf = self.create_text_overlay(data)
+            overlay_pdf = self.create_text_overlay(data, product_info["prefix"])
             
             template_pdf = PdfReader(str(template_path))
             overlay_reader = PdfReader(overlay_pdf)
