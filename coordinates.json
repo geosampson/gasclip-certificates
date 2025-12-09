@@ -1,0 +1,60 @@
+{
+  "comment": "PDF text overlay coordinates (from bottom-left, in points)",
+  "note": "Adjust these values to fine-tune text placement. A4 page is 595x842 points.",
+  
+  "page1": {
+    "serial_number": {
+      "x": 480,
+      "y": 727,
+      "font_size": 10,
+      "comment": "Serial number in top right area"
+    },
+    "activation_before": {
+      "x": 480,
+      "y": 712,
+      "font_size": 10,
+      "comment": "Activation date below serial"
+    },
+    "lot_number": {
+      "x": 145,
+      "y": 475,
+      "font_size": 10,
+      "comment": "Lot number in middle left"
+    },
+    "gas_production": {
+      "x": 145,
+      "y": 460,
+      "font_size": 10,
+      "comment": "Gas production date"
+    },
+    "calibration_date": {
+      "x": 190,
+      "y": 555,
+      "font_size": 10,
+      "comment": "Calibration date"
+    }
+  },
+  
+  "page2": {
+    "serial_number": {
+      "x": 480,
+      "y": 750,
+      "font_size": 10,
+      "comment": "Serial number on page 2"
+    },
+    "activation_boxes": {
+      "start_x": 340,
+      "y": 480,
+      "spacing": 20,
+      "font_size": 10,
+      "comment": "8 boxes for activation date digits (DDMMYYYY)"
+    },
+    "expiration_boxes": {
+      "start_x": 340,
+      "y": 400,
+      "spacing": 20,
+      "font_size": 10,
+      "comment": "8 boxes for expiration date digits (DDMMYYYY)"
+    }
+  }
+}

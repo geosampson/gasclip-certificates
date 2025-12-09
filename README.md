@@ -1,118 +1,220 @@
 # GasClip Certificates Generator
 
-A desktop application for generating calibration test certificates for GasClip gas detectors. This application simplifies the process of creating professional PDF certificates by automating data entry and formatting.
+A desktop application for generating calibration test certificates for GasClip gas detectors.
 
 ## Features
 
-- **Five Product Templates**: Support for MGC-S+, SGC-O, SGC-C, MGC-S, and SGC-H gas detectors
-- **User-Friendly Interface**: Simple GUI for selecting products and entering parameters
-- **Smart Input**: Only enter numeric values - the application handles formatting automatically
-- **Batch Processing**: Create multiple certificates in one session
-- **Flexible Storage**: Save certificates locally or upload to Google Drive
-- **Invoice Organization**: Group certificates by invoice number for easy management
+✅ **Five Product Support**
+- MGC-S+ (MGC-SIMPLEPLUS) - D4PQ prefix
+- SGC-O (Single Gas Clip O2) - SOSP prefix  
+- SGC-C (Single Gas Clip CO) - SCSQ prefix
+- MGC-S (MGC-SIMPLE) - D4SQ prefix
+- SGC-H (Single Gas Clip H2S) - SHSP prefix
 
-## Supported Products
+✅ **User-Friendly Interface**
+- Simple dropdown product selection
+- Auto-formatting dates (DD/MM/YYYY) as you type
+- Date validation (prevents invalid dates like 31/02/2025)
+- Keyboard navigation (Enter to advance, ↑↓ arrows to navigate)
+- Input validation to prevent errors
 
-1. **MGC-S+** (MGC-SIMPLEPLUS) - Serial prefix: D4PQ
-2. **SGC-O** (Single Gas Clip O2) - Serial prefix: SOSP
-3. **SGC-C** (Single Gas Clip CO) - Serial prefix: SCSQ
-4. **MGC-S** (MGC-SIMPLE) - Serial prefix: D4SQ
-5. **SGC-H** (Single Gas Clip H2S) - Serial prefix: SHSP
+✅ **Smart Workflow**
+1. Select product → Enter data → Generate certificate
+2. Repeat for multiple certificates
+3. Click "Finish" → Enter invoice number
+4. All certificates organized in `Invoice_XXXX` folder
 
-## Important Notes
+✅ **Automatic Calculations**
+- Calculates calibration expiration dates automatically
+- Adds product-specific prefixes to serial numbers
+- Validates all date inputs
 
-⚠️ **Current Version**: This version creates copies of the PDF templates with the original data. The application validates your inputs and organizes certificates efficiently. Future versions will include automatic data overlay on the PDFs.
+## Quick Start
 
-💡 **Workflow**: Use this application to:
-1. Quickly validate certificate data
-2. Generate properly named certificate files
-3. Organize certificates by invoice number
-4. Maintain a structured filing system
+### Windows
 
-## Installation
+1. **Install Python** (if not already installed)
+   - Download from [python.org](https://www.python.org/downloads/)
+   - During installation, check "Add Python to PATH"
 
-### Prerequisites
+2. **Download the Application**
+   ```cmd
+   git clone https://github.com/geosampson/gasclip-certificates.git
+   cd gasclip-certificates
+   ```
 
-- Python 3.8 or higher
-- pip (Python package installer)
-- tkinter (usually included with Python)
+3. **Install Dependencies**
+   ```cmd
+   install_windows.bat
+   ```
 
-### Setup
+4. **Run the Application**
+   ```cmd
+   run_app.bat
+   ```
 
-1. Clone this repository:
-```bash
-git clone https://github.com/geosampson/gasclip-certificates.git
-cd gasclip-certificates
-```
+### Mac/Linux
 
-2. Install required dependencies:
-```bash
-pip install -r requirements.txt
-```
+1. **Clone the Repository**
+   ```bash
+   git clone https://github.com/geosampson/gasclip-certificates.git
+   cd gasclip-certificates
+   ```
 
-3. Run the application:
-```bash
-python app.py
-```
+2. **Install Dependencies**
+   ```bash
+   chmod +x install_unix.sh
+   ./install_unix.sh
+   ```
+
+3. **Run the Application**
+   ```bash
+   chmod +x run_app.sh
+   ./run_app.sh
+   ```
 
 ## Usage
 
-1. **Select Product**: Choose the gas detector model from the dropdown menu
-2. **Enter Serial Number**: Input only the numeric digits (e.g., 236599 for D4PQ236599)
-3. **Enter Activation Date**: Input date as 8 digits without slashes (e.g., 01042026 for 01/04/2026)
-4. **Enter Lot Number**: Input the complete lot number
-5. **Enter Gas Production Date**: Input date as 8 digits (e.g., 29052025)
-6. **Enter Calibration Date**: Input date as 8 digits (e.g., 01102025)
-7. **Generate Certificate**: Click "Generate Certificate" to create the PDF
-8. **Save**: Choose to save locally or upload to Google Drive
-9. **Continue or Finish**: Create more certificates or click "Finish All Forms"
-10. **Invoice Number**: Enter the invoice number to organize all certificates in a folder
+### Generating a Certificate
 
-## Input Format
+1. **Select Product** from the dropdown menu
+2. **Enter Serial Number** (digits only, prefix is added automatically)
+   - Example: `236599` becomes `SOSP236599`
+3. **Enter Activation Date** (type numbers only, slashes added automatically)
+   - Type: `26022025` → Becomes: `26/02/2025`
+4. **Enter Lot Number**
+   - Example: `RR2310181807` or `25-3348`
+5. **Enter Gas Production Date** (auto-formatted)
+   - Type: `19102023` → Becomes: `19/10/2023`
+6. **Enter Calibration Date** (auto-formatted)
+   - Type: `26022024` → Becomes: `26/02/2024`
+7. **Click "Generate Certificate"**
 
-- **Serial Number**: Numeric digits only (no prefix)
-  - Example: `236599` (not D4PQ236599)
-- **Dates**: 8 digits in DDMMYYYY format (no slashes)
-  - Example: `26022025` (for 26/02/2025)
-- **Lot Number**: Complete lot number as shown on certificate
-  - Example: `RR2310181807`
+The application will:
+- Validate all inputs
+- Calculate expiration date automatically
+- Generate the PDF certificate
+- Save it to the `output/` folder
 
-## Project Structure
+### Batch Processing
+
+1. Generate multiple certificates one after another
+2. When finished, click **"Finish All Forms & Create Invoice Folder"**
+3. Enter the invoice number
+4. All certificates will be moved to `output/Invoice_XXXX/` folder
+
+### Keyboard Shortcuts
+
+- **Enter**: Move to next field
+- **↑ Arrow**: Move to previous field
+- **↓ Arrow**: Move to next field
+
+## File Structure
 
 ```
 gasclip-certificates/
-├── app.py                  # Main application file
-├── requirements.txt        # Python dependencies
-├── templates/             # PDF templates for each product
+├── app.py                      # Main application
+├── templates/                  # Original PDF templates
 │   ├── D4PQ236599.pdf
 │   ├── SOSP215459.pdf
 │   ├── SCSQ175392.pdf
 │   ├── D4SQ106733.pdf
 │   └── SHSP085112.pdf
-├── output/                # Generated certificates (created automatically)
-└── README.md             # This file
+├── output/                     # Generated certificates
+│   └── Invoice_XXXX/          # Organized by invoice
+├── coordinates.json            # Text position configuration
+├── calibrate_coordinates.py    # Coordinate calibration tool
+├── requirements.txt            # Python dependencies
+├── install_windows.bat         # Windows installer
+├── run_app.bat                # Windows launcher
+├── install_unix.sh            # Mac/Linux installer
+└── run_app.sh                 # Mac/Linux launcher
 ```
 
-## Roadmap
+## Coordinate Calibration (Optional)
 
-### Future Enhancements
+If the text positioning needs adjustment:
 
-- [ ] Automatic PDF text overlay (fill in data programmatically)
-- [ ] Direct Google Drive integration
-- [ ] Batch import from Excel/CSV
-- [ ] Certificate preview before saving
-- [ ] Print functionality
-- [ ] Custom template support
-- [ ] Multi-language support
+1. **Edit `coordinates.json`** to adjust text positions
+2. **Run calibration tool** to test different positions:
+   ```bash
+   python calibrate_coordinates.py
+   ```
+3. **Check generated test PDFs** in `calibration_tests/` folder
+4. **Update coordinates.json** with the best values
 
-## Contributing
+## Troubleshooting
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+### Text Not Appearing in PDFs
+
+The coordinates may need adjustment for your specific PDF templates:
+1. Run `python calibrate_coordinates.py`
+2. Check the test PDFs in `calibration_tests/`
+3. Find the offset that looks best
+4. Update `coordinates.json` with those values
+
+### Date Validation Errors
+
+- Dates must be valid (e.g., 31/02/2025 is invalid)
+- Month must be 01-12
+- Day must be 01-31
+- Year must be 2000-2100
+
+### Application Won't Start
+
+- Ensure Python 3.7+ is installed
+- Run the install script again
+- Check that all dependencies are installed:
+  ```bash
+  pip install -r requirements.txt
+  ```
+
+## Technical Details
+
+### Dependencies
+
+- Python 3.7+
+- tkinter (GUI framework)
+- PyPDF2 (PDF manipulation)
+- reportlab (PDF text overlay)
+
+### Product Specifications
+
+| Product | Prefix | Detector Life | Calibration Days |
+|---------|--------|---------------|------------------|
+| MGC-S+  | D4PQ   | 36 months     | 1095 days        |
+| SGC-O   | SOSP   | 24 months     | 730 days         |
+| SGC-C   | SCSQ   | 24 months     | 730 days         |
+| MGC-S   | D4SQ   | 24 months     | 730 days         |
+| SGC-H   | SHSP   | 24 months     | 730 days         |
 
 ## License
 
-This project is licensed under the MIT License.
+MIT License - See LICENSE file for details
 
 ## Support
 
-For issues, questions, or contributions, please open an issue on GitHub.
+For issues or questions:
+- Open an issue on GitHub
+- Check the [USER_GUIDE.md](USER_GUIDE.md) for detailed instructions
+- Review [INSTALL.md](INSTALL.md) for installation help
+
+## Version History
+
+### v3.0 (Current)
+- ✅ Working PDF text overlay
+- ✅ Auto-formatting dates with slashes
+- ✅ Date validation
+- ✅ Keyboard navigation (Enter, ↑↓ arrows)
+- ✅ Batch processing with invoice folders
+- ✅ Coordinate calibration tools
+
+### v2.0
+- PDF form field approach (experimental)
+
+### v1.0
+- Initial release with basic functionality
+
+---
+
+**Made with ❤️ for efficient certificate generation**

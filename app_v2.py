@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-GasClip Certificates Generator - Final Working Version
-Desktop application for generating calibration test certificates for GasClip gas detectors.
+GasClip Certificates Generator - Version 2.1 with Corrected Coordinates
 """
 
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime, timedelta
+import os
 import shutil
 from pathlib import Path
 from PyPDF2 import PdfReader, PdfWriter
@@ -100,41 +100,46 @@ class DateEntry(ttk.Entry):
 class GasClipCertificateGenerator:
     def __init__(self, root):
         self.root = root
-        self.root.title("GasClip Certificates Generator v3.0")
+        self.root.title("GasClip Certificates Generator v2.1")
         self.root.geometry("750x750")
         self.root.resizable(False, False)
         
-        # Product configurations
+        # Product configurations with CORRECTED coordinates
         self.products = {
             "MGC-S+ (MGC-SIMPLEPLUS)": {
                 "prefix": "D4PQ",
                 "template": "D4PQ236599.pdf",
                 "detector_life": 36,
                 "calibration_days": 1095,
+                "positions": self.get_positions_mgc_s_plus()
             },
             "SGC-O (Single Gas Clip O2)": {
                 "prefix": "SOSP",
                 "template": "SOSP215459.pdf",
                 "detector_life": 24,
                 "calibration_days": 730,
+                "positions": self.get_positions_sgc_o()
             },
             "SGC-C (Single Gas Clip CO)": {
                 "prefix": "SCSQ",
                 "template": "SCSQ175392.pdf",
                 "detector_life": 24,
                 "calibration_days": 730,
+                "positions": self.get_positions_sgc_c()
             },
             "MGC-S (MGC-SIMPLE)": {
                 "prefix": "D4SQ",
                 "template": "D4SQ106733.pdf",
                 "detector_life": 24,
                 "calibration_days": 730,
+                "positions": self.get_positions_mgc_s()
             },
             "SGC-H (Single Gas Clip H2S)": {
                 "prefix": "SHSP",
                 "template": "SHSP085112.pdf",
                 "detector_life": 24,
                 "calibration_days": 730,
+                "positions": self.get_positions_sgc_h()
             }
         }
         
@@ -146,12 +151,53 @@ class GasClipCertificateGenerator:
         self.setup_ui()
         self.setup_keyboard_navigation()
     
+    def get_positions_sgc_o(self):
+        """Get corrected positions for SGC-O template"""
+        return {
+            "page1": {
+                "serial": (520, 727),
+                "activation_before": (520, 712),
+                "lot_number": (145, 475),
+                "gas_production": (145, 460),
+                "calibration_date": (190, 555),
+            },
+            "page2": {
+                "serial": (520, 750),
+                "activation_boxes": [
+                    (545, 477), (560, 477),  # DD
+                    (590, 477), (605, 477),  # MM
+                    (650, 477), (665, 477), (680, 477), (695, 477)  # YYYY
+                ],
+                "expiration_boxes": [
+                    (545, 397), (560, 397),  # DD
+                    (590, 397), (605, 397),  # MM
+                    (650, 397), (665, 397), (680, 397), (695, 397)  # YYYY
+                ]
+            }
+        }
+    
+    def get_positions_mgc_s_plus(self):
+        """Get positions for MGC-S+ template (same layout as SGC-O)"""
+        return self.get_positions_sgc_o()
+    
+    def get_positions_sgc_c(self):
+        """Get positions for SGC-C template (same layout as SGC-O)"""
+        return self.get_positions_sgc_o()
+    
+    def get_positions_mgc_s(self):
+        """Get positions for MGC-S template (same layout as SGC-O)"""
+        return self.get_positions_sgc_o()
+    
+    def get_positions_sgc_h(self):
+        """Get positions for SGC-H template (same layout as SGC-O)"""
+        return self.get_positions_sgc_o()
+    
     def setup_ui(self):
         """Setup the user interface"""
         main_frame = ttk.Frame(self.root, padding="20")
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         
-        title_label = ttk.Label(main_frame, text="GasClip Certificate Generator v3.0", 
+        title_label = ttk.Label(main_frame, text="GasClip Certificate Generator v2.1", 
                                 font=("Arial", 18, "bold"))
         title_label.grid(row=0, column=0, columnspan=2, pady=(0, 20))
         
@@ -338,51 +384,59 @@ class GasClipCertificateGenerator:
         
         return True
     
-    def create_text_overlay(self, data):
-        """Create PDF overlay with text at specified positions"""
+    def create_text_overlay(self, data, product_info):
+        """Create a transparent PDF overlay with text at corrected positions"""
         packet = io.BytesIO()
         can = canvas.Canvas(packet, pagesize=A4)
         
         can.setFont("Helvetica", 10)
         can.setFillColor(black)
         
-        # Page 1 - Calibrated coordinates
-        can.drawString(500, 727, data["serial"])
-        can.drawString(500, 712, f"Activate before: {data['activation']}")
-        can.drawString(145, 475, data["lot"])
-        can.drawString(145, 460, data["gas_prod"])
-        can.drawString(190, 555, data["calibration"])
+        positions = product_info["positions"]
+        
+        # Page 1 overlays
+        can.drawString(positions["page1"]["serial"][0], positions["page1"]["serial"][1], 
+                      data["serial"])
+        can.drawString(positions["page1"]["activation_before"][0], 
+                      positions["page1"]["activation_before"][1], 
+                      data["activation"])
+        can.drawString(positions["page1"]["lot_number"][0], 
+                      positions["page1"]["lot_number"][1], 
+                      data["lot"])
+        can.drawString(positions["page1"]["gas_production"][0], 
+                      positions["page1"]["gas_production"][1], 
+                      data["gas_prod"])
+        can.drawString(positions["page1"]["calibration_date"][0], 
+                      positions["page1"]["calibration_date"][1], 
+                      data["calibration"])
         
         can.showPage()
         
-        # Page 2
-        can.drawString(500, 750, data["serial"])
+        # Page 2 overlays
+        can.drawString(positions["page2"]["serial"][0], positions["page2"]["serial"][1], 
+                      data["serial"])
         
-        # Activation date boxes (8 digits)
+        # Activation date in boxes (individual digits)
         activation_digits = data["activation"].replace('/', '')
-        start_x = 340
-        y = 480
-        spacing = 20
-        
         for i, digit in enumerate(activation_digits):
-            x = start_x + (i * spacing)
-            can.drawString(x, y, digit)
+            if i < len(positions["page2"]["activation_boxes"]):
+                x, y = positions["page2"]["activation_boxes"][i]
+                can.drawString(x, y, digit)
         
-        # Expiration date boxes (8 digits)
+        # Calibration expiration date in boxes
         expiration_digits = data["calibration_exp"].replace('/', '')
-        start_x = 340
-        y = 400
-        
         for i, digit in enumerate(expiration_digits):
-            x = start_x + (i * spacing)
-            can.drawString(x, y, digit)
+            if i < len(positions["page2"]["expiration_boxes"]):
+                x, y = positions["page2"]["expiration_boxes"][i]
+                can.drawString(x, y, digit)
         
         can.save()
         packet.seek(0)
+        
         return packet
     
     def generate_certificate(self):
-        """Generate the PDF certificate with text overlay"""
+        """Generate the PDF certificate with actual data overlay"""
         if not self.validate_inputs():
             return
         
@@ -417,8 +471,7 @@ class GasClipCertificateGenerator:
                 messagebox.showerror("Error", f"Template not found: {template_path}")
                 return
             
-            # Create overlay and merge
-            overlay_pdf = self.create_text_overlay(data)
+            overlay_pdf = self.create_text_overlay(data, product_info)
             
             template_pdf = PdfReader(str(template_path))
             overlay_reader = PdfReader(overlay_pdf)
@@ -468,8 +521,6 @@ class GasClipCertificateGenerator:
             
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate certificate:\n{str(e)}")
-            import traceback
-            traceback.print_exc()
     
     def clear_form(self):
         """Clear all input fields except product selection"""
