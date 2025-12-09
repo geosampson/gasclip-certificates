@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-GasClip Certificates Generator - Final Working Version
+GasClip Certificates Generator - v3.1 Fixed Version
 Desktop application for generating calibration test certificates for GasClip gas detectors.
 """
 
@@ -12,7 +12,7 @@ from pathlib import Path
 from PyPDF2 import PdfReader, PdfWriter
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
-from reportlab.lib.colors import black
+from reportlab.lib.colors import black, white
 import io
 
 
@@ -100,7 +100,7 @@ class DateEntry(ttk.Entry):
 class GasClipCertificateGenerator:
     def __init__(self, root):
         self.root = root
-        self.root.title("GasClip Certificates Generator v3.0")
+        self.root.title("GasClip Certificates Generator v3.1")
         self.root.geometry("750x750")
         self.root.resizable(False, False)
         
@@ -151,7 +151,7 @@ class GasClipCertificateGenerator:
         main_frame = ttk.Frame(self.root, padding="20")
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         
-        title_label = ttk.Label(main_frame, text="GasClip Certificate Generator v3.0", 
+        title_label = ttk.Label(main_frame, text="GasClip Certificate Generator v3.1", 
                                 font=("Arial", 18, "bold"))
         title_label.grid(row=0, column=0, columnspan=2, pady=(0, 20))
         
@@ -339,41 +339,89 @@ class GasClipCertificateGenerator:
         return True
     
     def create_text_overlay(self, data):
-        """Create PDF overlay with text at specified positions"""
+        """Create PDF overlay with white rectangles to cover old text, then add new text"""
         packet = io.BytesIO()
         can = canvas.Canvas(packet, pagesize=A4)
         
-        can.setFont("Helvetica", 10)
-        can.setFillColor(black)
+        # Page 1 - Cover old text with white rectangles, then add new text
         
-        # Page 1 - Calibrated coordinates
+        # Cover and replace serial number (top right)
+        can.setFillColor(white)
+        can.rect(480, 710, 120, 30, fill=1, stroke=0)  # Cover old serial and activation
+        can.setFillColor(black)
+        can.setFont("Helvetica", 10)
         can.drawString(500, 727, data["serial"])
         can.drawString(500, 712, f"Activate before: {data['activation']}")
+        
+        # Cover and replace serial number in the middle section (Serial Number box)
+        can.setFillColor(white)
+        can.rect(580, 275, 130, 25, fill=1, stroke=0)  # Cover old serial in middle
+        can.rect(580, 295, 130, 20, fill=1, stroke=0)  # Cover old activation date below serial
+        can.setFillColor(black)
+        can.setFont("Helvetica-Bold", 11)
+        can.drawString(590, 285, data["serial"])
+        can.setFont("Helvetica", 9)
+        can.drawString(590, 300, f"Activate before: {data['activation']}")
+        
+        # Cover and replace date in middle section
+        can.setFillColor(white)
+        can.rect(140, 450, 200, 40, fill=1, stroke=0)  # Cover old dates area
+        can.setFillColor(black)
+        can.setFont("Helvetica", 10)
         can.drawString(145, 475, data["lot"])
         can.drawString(145, 460, data["gas_prod"])
+        
+        # Cover and replace calibration date
+        can.setFillColor(white)
+        can.rect(185, 545, 120, 20, fill=1, stroke=0)  # Cover old calibration date
+        can.setFillColor(black)
+        can.setFont("Helvetica-Bold", 11)
         can.drawString(190, 555, data["calibration"])
         
         can.showPage()
         
-        # Page 2
+        # Page 2 - Cover old text and add new text
+        
+        # Cover and replace serial number (top right)
+        can.setFillColor(white)
+        can.rect(480, 740, 120, 20, fill=1, stroke=0)  # Cover old serial
+        can.setFillColor(black)
+        can.setFont('Helvetica', 10)
         can.drawString(500, 750, data["serial"])
         
-        # Activation date boxes (8 digits)
-        activation_digits = data["activation"].replace('/', '')
+        # Cover and replace serial number in middle section (sn: box)
+        can.setFillColor(white)
+        can.rect(580, 475, 130, 20, fill=1, stroke=0)  # Cover old serial in middle
+        can.setFillColor(black)
+        can.setFont('Helvetica-Bold', 11)
+        can.drawString(590, 483, data["serial"])
+        
+        # Cover activation date boxes area
+        can.setFillColor(white)
+        can.rect(330, 470, 200, 25, fill=1, stroke=0)  # Cover old activation boxes
+        
+        # Add activation date digits (without slashes, just the 8 digits)
+        can.setFillColor(black)
+        activation_raw = data["activation"].replace('/', '')  # "10/02/2020" → "10022020"
         start_x = 340
         y = 480
         spacing = 20
         
-        for i, digit in enumerate(activation_digits):
+        for i, digit in enumerate(activation_raw):
             x = start_x + (i * spacing)
             can.drawString(x, y, digit)
         
-        # Expiration date boxes (8 digits)
-        expiration_digits = data["calibration_exp"].replace('/', '')
+        # Cover expiration date boxes area
+        can.setFillColor(white)
+        can.rect(330, 390, 200, 25, fill=1, stroke=0)  # Cover old expiration boxes
+        
+        # Add expiration date digits (without slashes)
+        can.setFillColor(black)
+        expiration_raw = data["calibration_exp"].replace('/', '')  # Remove slashes
         start_x = 340
         y = 400
         
-        for i, digit in enumerate(expiration_digits):
+        for i, digit in enumerate(expiration_raw):
             x = start_x + (i * spacing)
             can.drawString(x, y, digit)
         
