@@ -19,12 +19,23 @@ A desktop application for generating calibration test certificates for GasClip g
 4. **MGC-S** (MGC-SIMPLE) - Serial prefix: D4SQ
 5. **SGC-H** (Single Gas Clip H2S) - Serial prefix: SHSP
 
+## Important Notes
+
+⚠️ **Current Version**: This version creates copies of the PDF templates with the original data. The application validates your inputs and organizes certificates efficiently. Future versions will include automatic data overlay on the PDFs.
+
+💡 **Workflow**: Use this application to:
+1. Quickly validate certificate data
+2. Generate properly named certificate files
+3. Organize certificates by invoice number
+4. Maintain a structured filing system
+
 ## Installation
 
 ### Prerequisites
 
 - Python 3.8 or higher
 - pip (Python package installer)
+- tkinter (usually included with Python)
 
 ### Setup
 
@@ -81,6 +92,22 @@ gasclip-certificates/
 ├── output/                # Generated certificates (created automatically)
 └── README.md             # This file
 ```
+
+## Roadmap
+
+### Future Enhancements
+
+- [ ] Automatic PDF text overlay (fill in data programmatically)
+- [ ] Direct Google Drive integration
+- [ ] Batch import from Excel/CSV
+- [ ] Certificate preview before saving
+- [ ] Print functionality
+- [ ] Custom template support
+- [ ] Multi-language support
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
