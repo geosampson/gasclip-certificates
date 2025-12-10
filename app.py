@@ -417,9 +417,10 @@ class GasClipCertificateGenerator:
             output_filename = f"{serial_number}.pdf"
             output_path = self.output_dir / output_filename
             
-            template_path = Path("templates") / product_info["template"]
+            # Use absolute path for template
+            template_path = Path(__file__).parent / "templates" / product_info["template"]
             if not template_path.exists():
-                messagebox.showerror("Error", f"Template not found: {template_path}")
+                messagebox.showerror("Error", f"Template not found: {template_path}\n\nPlease ensure the templates folder contains: {product_info['template']}")
                 return
             
             # Create overlay and merge
