@@ -347,9 +347,9 @@ class GasClipCertificateGenerator:
         can = canvas.Canvas(packet, pagesize=A4)
         
         # Page 1 - Cover lot placeholder, then write text
-        # Cover the "O2 18%" placeholder in lot area
+        # Cover the "O2 18%" placeholder in lot area (smaller rectangle)
         can.setFillColor(white)
-        can.rect(190, 400, 80, 20, fill=1, stroke=0)
+        can.rect(195, 405, 50, 15, fill=1, stroke=0)
         
         can.setFillColor(black)
         
