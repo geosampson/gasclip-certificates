@@ -12,7 +12,7 @@ from pathlib import Path
 from PyPDF2 import PdfReader, PdfWriter
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
-from reportlab.lib.colors import black
+from reportlab.lib.colors import black, white
 import io
 
 
@@ -28,9 +28,15 @@ class DateEntry(ttk.Entry):
         """Auto-format date as DD/MM/YYYY"""
         if event.keysym in ('BackSpace', 'Delete', 'Left', 'Right', 'Up', 'Down', 'Tab'):
             return
-        
-        text = self.get().replace('/', '')
-        
+
+        raw_text = self.get()
+        cursor_pos = self.index(tk.INSERT)
+
+        # Count digits before the cursor to restore caret after formatting
+        digits_before_cursor = ''.join(ch for ch in raw_text[:cursor_pos] if ch.isdigit())
+
+        text = ''.join(ch for ch in raw_text if ch.isdigit())
+
         # Only allow digits
         if text and not text.isdigit():
             self.delete(0, tk.END)
@@ -40,27 +46,28 @@ class DateEntry(ttk.Entry):
         # Limit to 8 digits
         if len(text) > 8:
             text = text[:8]
-        
+
         # Format with slashes
         formatted = text
         if len(text) >= 2:
-            formatted = text[:2]
-            if len(text) >= 4:
-                formatted += '/' + text[2:4]
-                if len(text) >= 5:
+            formatted = text[:2] + '/'
+            if len(text) > 2:
+                formatted += text[2:4]
+                if len(text) > 4:
                     formatted += '/' + text[4:8]
-            elif len(text) > 2:
-                formatted += '/' + text[2:]
         
         # Update the entry
-        cursor_pos = self.index(tk.INSERT)
         self.delete(0, tk.END)
         self.insert(0, formatted)
-        
+
         # Adjust cursor position after slashes
-        if len(text) == 2 or len(text) == 4:
-            cursor_pos += 1
-        self.icursor(min(cursor_pos, len(formatted)))
+        new_cursor = len(digits_before_cursor)
+        if new_cursor >= 2:
+            new_cursor += 1  # account for first slash
+        if new_cursor >= 4:
+            new_cursor += 1  # account for second slash
+
+        self.icursor(min(new_cursor, len(formatted)))
     
     def handle_backspace(self, event):
         """Handle backspace to remove slashes properly"""
@@ -388,47 +395,76 @@ class GasClipCertificateGenerator:
         """Create a transparent PDF overlay with text at corrected positions"""
         packet = io.BytesIO()
         can = canvas.Canvas(packet, pagesize=A4)
-        
+
+        def cover_and_draw(text, x, y, font_name, font_size, padding=1.5, height=None, min_width=None):
+            """Cover existing text area before drawing updated text."""
+            text_width = can.stringWidth(text, font_name, font_size)
+            rect_height = height if height is not None else font_size + (padding * 2)
+            rect_width = max(text_width, min_width or 0) + (padding * 2)
+
+            can.setFillColor(white)
+            can.rect(x - padding, y - padding, rect_width, rect_height, fill=1, stroke=0)
+            can.setFillColor(black)
+            can.setFont(font_name, int(font_size))
+            can.drawString(x, y, text)
+
         can.setFont("Helvetica", 10)
         can.setFillColor(black)
         
         positions = product_info["positions"]
         
         # Page 1 overlays
-        can.drawString(positions["page1"]["serial"][0], positions["page1"]["serial"][1], 
-                      data["serial"])
-        can.drawString(positions["page1"]["activation_before"][0], 
-                      positions["page1"]["activation_before"][1], 
-                      data["activation"])
-        can.drawString(positions["page1"]["lot_number"][0], 
-                      positions["page1"]["lot_number"][1], 
-                      data["lot"])
-        can.drawString(positions["page1"]["gas_production"][0], 
-                      positions["page1"]["gas_production"][1], 
-                      data["gas_prod"])
-        can.drawString(positions["page1"]["calibration_date"][0], 
-                      positions["page1"]["calibration_date"][1], 
-                      data["calibration"])
+        font_name = "Helvetica"
+        font_size = 10
+
+        p1_rectangles = {
+            "serial": {
+                "padding": 2,
+                "min_width": 120,
+                "height": product_info["positions"]["page1"]["serial"][2] + 4,
+            },
+            "activation": {
+                "padding": 1.5,
+                "min_width": 80,
+                "height": product_info["positions"]["page1"]["activation_before"][2] + 4,
+            },
+            "lot": {
+                "padding": 2,
+                "min_width": 100,
+                "height": product_info["positions"]["page1"]["lot_number"][2] + 4,
+            },
+            "gas_prod": {
+                "padding": 2,
+                "min_width": 95,
+                "height": product_info["positions"]["page1"]["gas_production"][2] + 4,
+            },
+            "calibration": {
+                "padding": 2,
+                "min_width": 100,
+                "height": product_info["positions"]["page1"]["calibration_date"][2] + 4,
+            },
+        }
+
+        cover_and_draw(data["serial"], positions["page1"]["serial"][0],
+                       positions["page1"]["serial"][1], font_name, font_size, **p1_rectangles["serial"])
+        cover_and_draw(data["activation"], positions["page1"]["activation_before"][0],
+                       positions["page1"]["activation_before"][1], font_name, font_size, **p1_rectangles["activation"])
+        cover_and_draw(data["lot"], positions["page1"]["lot_number"][0],
+                       positions["page1"]["lot_number"][1], font_name, font_size, **p1_rectangles["lot"])
+        cover_and_draw(data["gas_prod"], positions["page1"]["gas_production"][0],
+                       positions["page1"]["gas_production"][1], font_name, font_size, **p1_rectangles["gas_prod"])
+        cover_and_draw(data["calibration"], positions["page1"]["calibration_date"][0],
+                       positions["page1"]["calibration_date"][1], font_name, font_size, **p1_rectangles["calibration"])
         
         can.showPage()
         
         # Page 2 overlays
-        can.drawString(positions["page2"]["serial"][0], positions["page2"]["serial"][1], 
-                      data["serial"])
-        
-        # Activation date in boxes (individual digits)
-        activation_digits = data["activation"].replace('/', '')
-        for i, digit in enumerate(activation_digits):
-            if i < len(positions["page2"]["activation_boxes"]):
-                x, y = positions["page2"]["activation_boxes"][i]
-                can.drawString(x, y, digit)
-        
-        # Calibration expiration date in boxes
-        expiration_digits = data["calibration_exp"].replace('/', '')
-        for i, digit in enumerate(expiration_digits):
-            if i < len(positions["page2"]["expiration_boxes"]):
-                x, y = positions["page2"]["expiration_boxes"][i]
-                can.drawString(x, y, digit)
+        cover_and_draw(data["serial"], positions["page2"]["serial"][0],
+                       positions["page2"]["serial"][1], font_name, font_size, padding=2,
+                       min_width=120, height=positions["page2"]["serial"][2] + 4)
+
+        # Leave the activation and expiration date boxes untouched on page 2 so
+        # the customer can fill them manually on the printed form.
         
         can.save()
         packet.seek(0)
