@@ -346,7 +346,11 @@ class GasClipCertificateGenerator:
         packet = io.BytesIO()
         can = canvas.Canvas(packet, pagesize=A4)
         
-        # Page 1 - Just write text in empty spaces
+        # Page 1 - Cover lot placeholder, then write text
+        # Cover the "O2 18%" placeholder in lot area
+        can.setFillColor(white)
+        can.rect(190, 400, 80, 20, fill=1, stroke=0)
+        
         can.setFillColor(black)
         
         # Serial number
