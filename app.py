@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-GasClip Certificates Generator - v3.1 Fixed Version
+GasClip Certificates Generator - v4.0 Clean Templates Version
 Desktop application for generating calibration test certificates for GasClip gas detectors.
 """
 
@@ -12,63 +12,62 @@ from pathlib import Path
 from PyPDF2 import PdfReader, PdfWriter
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
-from reportlab.lib.colors import black, white
+from reportlab.lib.colors import black
 import io
 from product_coordinates import get_coordinates
 
 
 class DateEntry(ttk.Entry):
-    """Custom Entry widget with automatic date formatting (DD/MM/YYYY)"""
+    """Custom Entry widget with automatic date formatting (DD/MM/YYYY) - Fixed cursor jumping"""
     
     def __init__(self, master=None, **kwargs):
         super().__init__(master, **kwargs)
+        self._last_value = ""
         self.bind('<KeyRelease>', self.format_date)
-        self.bind('<BackSpace>', self.handle_backspace)
         
     def format_date(self, event):
-        """Auto-format date as DD/MM/YYYY"""
-        if event.keysym in ('BackSpace', 'Delete', 'Left', 'Right', 'Up', 'Down', 'Tab'):
+        """Auto-format date as DD/MM/YYYY without cursor jumping"""
+        # Ignore navigation keys
+        if event.keysym in ('BackSpace', 'Delete', 'Left', 'Right', 'Up', 'Down', 'Tab', 'Shift_L', 'Shift_R'):
             return
         
-        text = self.get().replace('/', '')
+        # Get current value and cursor position
+        current = self.get()
+        cursor_pos = self.index(tk.INSERT)
         
-        # Only allow digits
-        if text and not text.isdigit():
-            self.delete(0, tk.END)
-            self.insert(0, ''.join(c for c in self.get() if c.isdigit() or c == '/'))
-            return
+        # Remove all non-digits
+        digits_only = ''.join(c for c in current if c.isdigit())
         
         # Limit to 8 digits
-        if len(text) > 8:
-            text = text[:8]
+        if len(digits_only) > 8:
+            digits_only = digits_only[:8]
         
         # Format with slashes
-        formatted = text
-        if len(text) >= 2:
-            formatted = text[:2]
-            if len(text) >= 4:
-                formatted += '/' + text[2:4]
-                if len(text) >= 5:
-                    formatted += '/' + text[4:8]
-            elif len(text) > 2:
-                formatted += '/' + text[2:]
+        if len(digits_only) <= 2:
+            formatted = digits_only
+        elif len(digits_only) <= 4:
+            formatted = digits_only[:2] + '/' + digits_only[2:]
+        else:
+            formatted = digits_only[:2] + '/' + digits_only[2:4] + '/' + digits_only[4:]
         
-        # Update the entry
-        cursor_pos = self.index(tk.INSERT)
-        self.delete(0, tk.END)
-        self.insert(0, formatted)
+        # Only update if changed
+        if formatted != current:
+            # Calculate new cursor position
+            # Count slashes before cursor in old and new strings
+            slashes_before_old = current[:cursor_pos].count('/')
+            slashes_before_new = formatted[:cursor_pos + (formatted.count('/') - current.count('/'))].count('/')
+            
+            # Adjust cursor position
+            new_cursor_pos = cursor_pos + (slashes_before_new - slashes_before_old)
+            
+            # Update entry
+            self.delete(0, tk.END)
+            self.insert(0, formatted)
+            
+            # Restore cursor position
+            self.icursor(min(new_cursor_pos, len(formatted)))
         
-        # Adjust cursor position after slashes
-        if len(text) == 2 or len(text) == 4:
-            cursor_pos += 1
-        self.icursor(min(cursor_pos, len(formatted)))
-    
-    def handle_backspace(self, event):
-        """Handle backspace to remove slashes properly"""
-        cursor_pos = self.index(tk.INSERT)
-        if cursor_pos > 0 and self.get()[cursor_pos-1:cursor_pos] == '/':
-            self.delete(cursor_pos-2, cursor_pos)
-            return 'break'
+        self._last_value = formatted
     
     def get_raw_date(self):
         """Get date without slashes (DDMMYYYY)"""
@@ -101,39 +100,39 @@ class DateEntry(ttk.Entry):
 class GasClipCertificateGenerator:
     def __init__(self, root):
         self.root = root
-        self.root.title("GasClip Certificates Generator v3.1")
+        self.root.title("GasClip Certificates Generator v4.0")
         self.root.geometry("750x750")
         self.root.resizable(False, False)
         
-        # Product configurations
+        # Product configurations - using clean templates
         self.products = {
             "MGC-S+ (MGC-SIMPLEPLUS)": {
                 "prefix": "D4PQ",
-                "template": "D4PQ236599.pdf",
+                "template": "D4PQ236599_clean.pdf",
                 "detector_life": 36,
                 "calibration_days": 1095,
             },
             "SGC-O (Single Gas Clip O2)": {
                 "prefix": "SOSP",
-                "template": "SOSP215459.pdf",
+                "template": "SOSP215459_clean.pdf",
                 "detector_life": 24,
                 "calibration_days": 730,
             },
             "SGC-C (Single Gas Clip CO)": {
                 "prefix": "SCSQ",
-                "template": "SCSQ175392.pdf",
+                "template": "SCSQ175392_clean.pdf",
                 "detector_life": 24,
                 "calibration_days": 730,
             },
             "MGC-S (MGC-SIMPLE)": {
                 "prefix": "D4SQ",
-                "template": "D4SQ106733.pdf",
+                "template": "D4SQ106733_clean.pdf",
                 "detector_life": 24,
                 "calibration_days": 730,
             },
             "SGC-H (Single Gas Clip H2S)": {
                 "prefix": "SHSP",
-                "template": "SHSP085112.pdf",
+                "template": "SHSP085112_clean.pdf",
                 "detector_life": 24,
                 "calibration_days": 730,
             }
@@ -152,7 +151,7 @@ class GasClipCertificateGenerator:
         main_frame = ttk.Frame(self.root, padding="20")
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         
-        title_label = ttk.Label(main_frame, text="GasClip Certificate Generator v3.1", 
+        title_label = ttk.Label(main_frame, text="GasClip Certificate Generator v4.0", 
                                 font=("Arial", 18, "bold"))
         title_label.grid(row=0, column=0, columnspan=2, pady=(0, 20))
         
@@ -180,7 +179,7 @@ class GasClipCertificateGenerator:
         self.serial_entry = ttk.Entry(main_frame, width=47, font=("Arial", 10))
         self.serial_entry.grid(row=4, column=1, sticky=(tk.W, tk.E), pady=5, padx=(10, 0))
         self.entry_widgets.append(self.serial_entry)
-        ttk.Label(main_frame, text="Example: 236599", 
+        ttk.Label(main_frame, text="Example: 175392", 
                   font=("Arial", 9), foreground="gray").grid(
             row=5, column=1, sticky=tk.W, padx=(10, 0))
         
@@ -198,7 +197,7 @@ class GasClipCertificateGenerator:
         self.lot_entry = ttk.Entry(main_frame, width=47, font=("Arial", 10))
         self.lot_entry.grid(row=8, column=1, sticky=(tk.W, tk.E), pady=5, padx=(10, 0))
         self.entry_widgets.append(self.lot_entry)
-        ttk.Label(main_frame, text="Example: RR2310181807 or 25-3348", 
+        ttk.Label(main_frame, text="Example: CO 100ppm", 
                   font=("Arial", 9), foreground="gray").grid(
             row=9, column=1, sticky=tk.W, padx=(10, 0))
         
@@ -340,102 +339,55 @@ class GasClipCertificateGenerator:
         return True
     
     def create_text_overlay(self, data, prefix):
-        """Create PDF overlay with white rectangles to cover old text, then add new text"""
+        """Create PDF overlay - NO white rectangles needed with clean templates!"""
         # Get coordinates for this product
         coords = get_coordinates(prefix)
         
         packet = io.BytesIO()
         can = canvas.Canvas(packet, pagesize=A4)
         
-        # Page 1 - Cover old text with white rectangles at EXACT coordinates, then add new text
-        
-        # Cover and replace serial number in middle section (Serial Number box)
-        p1_serial = coords["page1"]["serial"]
-        can.setFillColor(white)
-        can.rect(p1_serial["x"] - 1, p1_serial["y"] - 2, 105, 18, fill=1, stroke=0)
+        # Page 1 - Just write text in empty spaces
         can.setFillColor(black)
+        
+        # Serial number
+        p1_serial = coords["page1"]["serial"]
         can.setFont("Helvetica-Bold", int(p1_serial["size"]))
         can.drawString(p1_serial["x"], p1_serial["y"], data["serial"])
         
-        # Cover and replace activation date (below serial in middle section)
+        # Activation date
         p1_act = coords["page1"]["activation_date"]
-        can.setFillColor(white)
-        can.rect(p1_act["x"], p1_act["y"] - 3, 70, 12, fill=1, stroke=0)
-        can.setFillColor(black)
         can.setFont("Helvetica", int(p1_act["size"]))
         can.drawString(p1_act["x"], p1_act["y"], data["activation"])
         
-        # Cover and replace lot number
+        # Lot number
         p1_lot = coords["page1"]["lot"]
-        can.setFillColor(white)
-        can.rect(p1_lot["x"], p1_lot["y"] - 2, 85, 16, fill=1, stroke=0)
-        can.setFillColor(black)
         can.setFont("Helvetica-Bold", int(p1_lot["size"]))
         can.drawString(p1_lot["x"], p1_lot["y"], data["lot"])
         
-        # Cover and replace gas production date
+        # Gas production date
         p1_gas = coords["page1"]["gas_prod"]
-        can.setFillColor(white)
-        can.rect(p1_gas["x"], p1_gas["y"] - 2, 95, 13, fill=1, stroke=0)
-        can.setFillColor(black)
         can.setFont("Helvetica", int(p1_gas["size"]))
         can.drawString(p1_gas["x"], p1_gas["y"], data["gas_prod"])
         
-        # Cover and replace calibration date
+        # Calibration date
         p1_cal = coords["page1"]["calibration"]
-        can.setFillColor(white)
-        can.rect(p1_cal["x"], p1_cal["y"] - 2, 95, 16, fill=1, stroke=0)
-        can.setFillColor(black)
         can.setFont("Helvetica-Bold", int(p1_cal["size"]))
         can.drawString(p1_cal["x"], p1_cal["y"], data["calibration"])
         
         can.showPage()
         
-        # Page 2 - Cover old text at EXACT coordinates and add new text
-        
-        # Cover and replace serial number in middle section (sn: box)
-        p2_serial = coords["page2"]["serial"]
-        can.setFillColor(white)
-        can.rect(p2_serial["x"] - 1, p2_serial["y"] - 2, 105, 18, fill=1, stroke=0)
+        # Page 2 - ONLY serial number, NO date boxes
         can.setFillColor(black)
+        p2_serial = coords["page2"]["serial"]
         can.setFont('Helvetica-Bold', int(p2_serial["size"]))
         can.drawString(p2_serial["x"], p2_serial["y"], data["serial"])
-        
-        # Cover activation date boxes area
-        can.setFillColor(white)
-        can.rect(330, 470, 200, 25, fill=1, stroke=0)  # Cover old activation boxes
-        
-        # Add activation date digits (without slashes, just the 8 digits)
-        can.setFillColor(black)
-        activation_raw = data["activation"].replace('/', '')  # "10/02/2020" → "10022020"
-        start_x = 340
-        y = 480
-        spacing = 20
-        
-        for i, digit in enumerate(activation_raw):
-            x = start_x + (i * spacing)
-            can.drawString(x, y, digit)
-        
-        # Cover expiration date boxes area
-        can.setFillColor(white)
-        can.rect(330, 390, 200, 25, fill=1, stroke=0)  # Cover old expiration boxes
-        
-        # Add expiration date digits (without slashes)
-        can.setFillColor(black)
-        expiration_raw = data["calibration_exp"].replace('/', '')  # Remove slashes
-        start_x = 340
-        y = 400
-        
-        for i, digit in enumerate(expiration_raw):
-            x = start_x + (i * spacing)
-            can.drawString(x, y, digit)
         
         can.save()
         packet.seek(0)
         return packet
     
     def generate_certificate(self):
-        """Generate the PDF certificate with text overlay"""
+        """Generate the PDF certificate"""
         if not self.validate_inputs():
             return
         
