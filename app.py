@@ -12,7 +12,7 @@ from pathlib import Path
 from PyPDF2 import PdfReader, PdfWriter
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
-from reportlab.lib.colors import black
+from reportlab.lib.colors import black, white
 import io
 from product_coordinates import get_coordinates
 
