@@ -354,10 +354,10 @@ class GasClipCertificateGenerator:
         packet = io.BytesIO()
         can = canvas.Canvas(packet, pagesize=A4)
 
-        def cover_and_draw(text, x, y, font_name, font_size, padding=2, height=None, min_width=None):
+        def cover_and_draw(text, x, y, font_name, font_size, padding=1.5, height=None, min_width=None):
             """Cover existing text area and draw new text precisely at the provided point."""
             text_width = can.stringWidth(text, font_name, font_size)
-            rect_height = height if height is not None else font_size + padding
+            rect_height = height if height is not None else font_size + (padding * 2)
             rect_width = max(text_width, min_width or 0) + (padding * 2)
 
             can.setFillColor(white)
@@ -370,11 +370,11 @@ class GasClipCertificateGenerator:
 
         # Provide slightly oversized rectangles so previous printed values are fully hidden
         p1_rectangles = {
-            "serial": {"padding": 4, "min_width": 140, "height": 22},
-            "activation_date": {"padding": 3, "min_width": 95, "height": 18},
-            "lot": {"padding": 4, "min_width": 120, "height": 22},
-            "gas_prod": {"padding": 4, "min_width": 120, "height": 20},
-            "calibration": {"padding": 4, "min_width": 120, "height": 22},
+            "serial": {"padding": 2, "min_width": 120, "height": coords["page1"]["serial"]["size"] + 4},
+            "activation_date": {"padding": 1.5, "min_width": 80, "height": coords["page1"]["activation_date"]["size"] + 4},
+            "lot": {"padding": 2, "min_width": 100, "height": coords["page1"]["lot"]["size"] + 4},
+            "gas_prod": {"padding": 2, "min_width": 95, "height": coords["page1"]["gas_prod"]["size"] + 4},
+            "calibration": {"padding": 2, "min_width": 100, "height": coords["page1"]["calibration"]["size"] + 4},
         }
 
         # Cover and replace serial number in middle section (Serial Number box)
@@ -409,7 +409,8 @@ class GasClipCertificateGenerator:
         # Cover and replace serial number in middle section (sn: box)
         p2_serial = coords["page2"]["serial"]
         cover_and_draw(data["serial"], p2_serial["x"], p2_serial["y"],
-                       'Helvetica-Bold', p2_serial["size"], padding=4, min_width=140, height=22)
+                       'Helvetica-Bold', p2_serial["size"], padding=2, min_width=120,
+                       height=p2_serial["size"] + 4)
 
         # Leave the activation and expiration boxes untouched on page 2 so the
         # customer can fill them manually on the printed form.

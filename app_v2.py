@@ -396,10 +396,10 @@ class GasClipCertificateGenerator:
         packet = io.BytesIO()
         can = canvas.Canvas(packet, pagesize=A4)
 
-        def cover_and_draw(text, x, y, font_name, font_size, padding=2, height=None, min_width=None):
+        def cover_and_draw(text, x, y, font_name, font_size, padding=1.5, height=None, min_width=None):
             """Cover existing text area before drawing updated text."""
             text_width = can.stringWidth(text, font_name, font_size)
-            rect_height = height if height is not None else font_size + padding
+            rect_height = height if height is not None else font_size + (padding * 2)
             rect_width = max(text_width, min_width or 0) + (padding * 2)
 
             can.setFillColor(white)
@@ -418,11 +418,31 @@ class GasClipCertificateGenerator:
         font_size = 10
 
         p1_rectangles = {
-            "serial": {"padding": 4, "min_width": 140, "height": 22},
-            "activation": {"padding": 3, "min_width": 95, "height": 18},
-            "lot": {"padding": 4, "min_width": 120, "height": 22},
-            "gas_prod": {"padding": 4, "min_width": 120, "height": 20},
-            "calibration": {"padding": 4, "min_width": 120, "height": 22},
+            "serial": {
+                "padding": 2,
+                "min_width": 120,
+                "height": product_info["positions"]["page1"]["serial"][2] + 4,
+            },
+            "activation": {
+                "padding": 1.5,
+                "min_width": 80,
+                "height": product_info["positions"]["page1"]["activation_before"][2] + 4,
+            },
+            "lot": {
+                "padding": 2,
+                "min_width": 100,
+                "height": product_info["positions"]["page1"]["lot_number"][2] + 4,
+            },
+            "gas_prod": {
+                "padding": 2,
+                "min_width": 95,
+                "height": product_info["positions"]["page1"]["gas_production"][2] + 4,
+            },
+            "calibration": {
+                "padding": 2,
+                "min_width": 100,
+                "height": product_info["positions"]["page1"]["calibration_date"][2] + 4,
+            },
         }
 
         cover_and_draw(data["serial"], positions["page1"]["serial"][0],
@@ -440,7 +460,8 @@ class GasClipCertificateGenerator:
         
         # Page 2 overlays
         cover_and_draw(data["serial"], positions["page2"]["serial"][0],
-                       positions["page2"]["serial"][1], font_name, font_size, padding=4, min_width=140, height=22)
+                       positions["page2"]["serial"][1], font_name, font_size, padding=2,
+                       min_width=120, height=positions["page2"]["serial"][2] + 4)
 
         # Leave the activation and expiration date boxes untouched on page 2 so
         # the customer can fill them manually on the printed form.
