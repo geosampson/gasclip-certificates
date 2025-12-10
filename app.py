@@ -30,7 +30,13 @@ class DateEntry(ttk.Entry):
         if event.keysym in ('BackSpace', 'Delete', 'Left', 'Right', 'Up', 'Down', 'Tab'):
             return
 
-        text = self.get().replace('/', '')
+        raw_text = self.get()
+        cursor_pos = self.index(tk.INSERT)
+
+        # Count digits before the cursor to restore caret after formatting
+        digits_before_cursor = ''.join(ch for ch in raw_text[:cursor_pos] if ch.isdigit())
+
+        text = ''.join(ch for ch in raw_text if ch.isdigit())
 
         # Only allow digits
         if text and not text.isdigit():
@@ -52,14 +58,17 @@ class DateEntry(ttk.Entry):
                     formatted += '/' + text[4:8]
 
         # Update the entry
-        cursor_pos = self.index(tk.INSERT)
         self.delete(0, tk.END)
         self.insert(0, formatted)
-        
+
         # Adjust cursor position after slashes
-        if len(text) == 2 or len(text) == 4:
-            cursor_pos += 1
-        self.icursor(min(cursor_pos, len(formatted)))
+        new_cursor = len(digits_before_cursor)
+        if new_cursor >= 2:
+            new_cursor += 1  # account for first slash
+        if new_cursor >= 4:
+            new_cursor += 1  # account for second slash
+
+        self.icursor(min(new_cursor, len(formatted)))
     
     def handle_backspace(self, event):
         """Handle backspace to remove slashes properly"""
