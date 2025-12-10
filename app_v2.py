@@ -396,13 +396,14 @@ class GasClipCertificateGenerator:
         packet = io.BytesIO()
         can = canvas.Canvas(packet, pagesize=A4)
 
-        def cover_and_draw(text, x, y, font_name, font_size, padding=2, height=None):
+        def cover_and_draw(text, x, y, font_name, font_size, padding=2, height=None, min_width=None):
             """Cover existing text area before drawing updated text."""
             text_width = can.stringWidth(text, font_name, font_size)
             rect_height = height if height is not None else font_size + padding
+            rect_width = max(text_width, min_width or 0) + (padding * 2)
 
             can.setFillColor(white)
-            can.rect(x - padding, y - padding, text_width + (padding * 2), rect_height, fill=1, stroke=0)
+            can.rect(x - padding, y - padding, rect_width, rect_height, fill=1, stroke=0)
             can.setFillColor(black)
             can.setFont(font_name, int(font_size))
             can.drawString(x, y, text)
@@ -415,22 +416,31 @@ class GasClipCertificateGenerator:
         # Page 1 overlays
         font_name = "Helvetica"
         font_size = 10
+
+        p1_rectangles = {
+            "serial": {"padding": 4, "min_width": 140, "height": 22},
+            "activation": {"padding": 3, "min_width": 95, "height": 18},
+            "lot": {"padding": 4, "min_width": 120, "height": 22},
+            "gas_prod": {"padding": 4, "min_width": 120, "height": 20},
+            "calibration": {"padding": 4, "min_width": 120, "height": 22},
+        }
+
         cover_and_draw(data["serial"], positions["page1"]["serial"][0],
-                       positions["page1"]["serial"][1], font_name, font_size, padding=3)
+                       positions["page1"]["serial"][1], font_name, font_size, **p1_rectangles["serial"])
         cover_and_draw(data["activation"], positions["page1"]["activation_before"][0],
-                       positions["page1"]["activation_before"][1], font_name, font_size, padding=2)
+                       positions["page1"]["activation_before"][1], font_name, font_size, **p1_rectangles["activation"])
         cover_and_draw(data["lot"], positions["page1"]["lot_number"][0],
-                       positions["page1"]["lot_number"][1], font_name, font_size, padding=3)
+                       positions["page1"]["lot_number"][1], font_name, font_size, **p1_rectangles["lot"])
         cover_and_draw(data["gas_prod"], positions["page1"]["gas_production"][0],
-                       positions["page1"]["gas_production"][1], font_name, font_size, padding=3)
+                       positions["page1"]["gas_production"][1], font_name, font_size, **p1_rectangles["gas_prod"])
         cover_and_draw(data["calibration"], positions["page1"]["calibration_date"][0],
-                       positions["page1"]["calibration_date"][1], font_name, font_size, padding=3)
+                       positions["page1"]["calibration_date"][1], font_name, font_size, **p1_rectangles["calibration"])
         
         can.showPage()
         
         # Page 2 overlays
         cover_and_draw(data["serial"], positions["page2"]["serial"][0],
-                       positions["page2"]["serial"][1], font_name, font_size, padding=3)
+                       positions["page2"]["serial"][1], font_name, font_size, padding=4, min_width=140, height=22)
 
         # Activation date in boxes (individual digits)
         activation_digits = data["activation"].replace('/', '')
@@ -441,7 +451,7 @@ class GasClipCertificateGenerator:
             y = act_positions[0][1]
             width = (max_x - min_x) + 12
             can.setFillColor(white)
-            can.rect(min_x - 4, y - 4, width + 8, 16, fill=1, stroke=0)
+            can.rect(min_x - 6, y - 6, width + 14, 18, fill=1, stroke=0)
             can.setFillColor(black)
         can.setFont("Helvetica-Bold", 12)
         for i, digit in enumerate(activation_digits):
@@ -458,7 +468,7 @@ class GasClipCertificateGenerator:
             y = exp_positions[0][1]
             width = (max_x - min_x) + 12
             can.setFillColor(white)
-            can.rect(min_x - 4, y - 4, width + 8, 16, fill=1, stroke=0)
+            can.rect(min_x - 6, y - 6, width + 14, 18, fill=1, stroke=0)
             can.setFillColor(black)
         can.setFont("Helvetica-Bold", 12)
         for i, digit in enumerate(expiration_digits):

@@ -354,43 +354,53 @@ class GasClipCertificateGenerator:
         packet = io.BytesIO()
         can = canvas.Canvas(packet, pagesize=A4)
 
-        def cover_and_draw(text, x, y, font_name, font_size, padding=2, height=None):
+        def cover_and_draw(text, x, y, font_name, font_size, padding=2, height=None, min_width=None):
             """Cover existing text area and draw new text precisely at the provided point."""
             text_width = can.stringWidth(text, font_name, font_size)
             rect_height = height if height is not None else font_size + padding
+            rect_width = max(text_width, min_width or 0) + (padding * 2)
 
             can.setFillColor(white)
-            can.rect(x - padding, y - padding, text_width + (padding * 2), rect_height, fill=1, stroke=0)
+            can.rect(x - padding, y - padding, rect_width, rect_height, fill=1, stroke=0)
             can.setFillColor(black)
             can.setFont(font_name, int(font_size))
             can.drawString(x, y, text)
         
         # Page 1 - Cover old text with white rectangles at EXACT coordinates, then add new text
-        
+
+        # Provide slightly oversized rectangles so previous printed values are fully hidden
+        p1_rectangles = {
+            "serial": {"padding": 4, "min_width": 140, "height": 22},
+            "activation_date": {"padding": 3, "min_width": 95, "height": 18},
+            "lot": {"padding": 4, "min_width": 120, "height": 22},
+            "gas_prod": {"padding": 4, "min_width": 120, "height": 20},
+            "calibration": {"padding": 4, "min_width": 120, "height": 22},
+        }
+
         # Cover and replace serial number in middle section (Serial Number box)
         p1_serial = coords["page1"]["serial"]
         cover_and_draw(data["serial"], p1_serial["x"], p1_serial["y"],
-                       "Helvetica-Bold", p1_serial["size"], padding=3)
-        
+                       "Helvetica-Bold", p1_serial["size"], **p1_rectangles["serial"])
+
         # Cover and replace activation date (below serial in middle section)
         p1_act = coords["page1"]["activation_date"]
         cover_and_draw(data["activation"], p1_act["x"], p1_act["y"],
-                       "Helvetica", p1_act["size"], padding=2)
-        
+                       "Helvetica", p1_act["size"], **p1_rectangles["activation_date"])
+
         # Cover and replace lot number
         p1_lot = coords["page1"]["lot"]
         cover_and_draw(data["lot"], p1_lot["x"], p1_lot["y"],
-                       "Helvetica-Bold", p1_lot["size"], padding=3)
-        
+                       "Helvetica-Bold", p1_lot["size"], **p1_rectangles["lot"])
+
         # Cover and replace gas production date
         p1_gas = coords["page1"]["gas_prod"]
         cover_and_draw(data["gas_prod"], p1_gas["x"], p1_gas["y"],
-                       "Helvetica", p1_gas["size"], padding=3)
-        
+                       "Helvetica", p1_gas["size"], **p1_rectangles["gas_prod"])
+
         # Cover and replace calibration date
         p1_cal = coords["page1"]["calibration"]
         cover_and_draw(data["calibration"], p1_cal["x"], p1_cal["y"],
-                       "Helvetica-Bold", p1_cal["size"], padding=3)
+                       "Helvetica-Bold", p1_cal["size"], **p1_rectangles["calibration"])
         
         can.showPage()
         
@@ -399,7 +409,7 @@ class GasClipCertificateGenerator:
         # Cover and replace serial number in middle section (sn: box)
         p2_serial = coords["page2"]["serial"]
         cover_and_draw(data["serial"], p2_serial["x"], p2_serial["y"],
-                       'Helvetica-Bold', p2_serial["size"], padding=3)
+                       'Helvetica-Bold', p2_serial["size"], padding=4, min_width=140, height=22)
 
         # Cover activation date boxes area
         p2_activation = coords["page2"]["activation_boxes"]
@@ -407,8 +417,8 @@ class GasClipCertificateGenerator:
         spacing = p2_activation["spacing"]
         activation_width = spacing * len(activation_raw)
         can.setFillColor(white)
-        can.rect(p2_activation["x"] - 2, p2_activation["y"] - 3,
-                 activation_width + 4, 16, fill=1, stroke=0)
+        can.rect(p2_activation["x"] - 4, p2_activation["y"] - 5,
+                 activation_width + 12, 18, fill=1, stroke=0)
 
         # Add activation date digits (without slashes, just the 8 digits)
         can.setFillColor(black)
@@ -425,8 +435,8 @@ class GasClipCertificateGenerator:
         expiration_raw = data["calibration_exp"].replace('/', '')  # Remove slashes
         exp_width = p2_expiration["spacing"] * len(expiration_raw)
         can.setFillColor(white)
-        can.rect(p2_expiration["x"] - 2, p2_expiration["y"] - 3,
-                 exp_width + 4, 16, fill=1, stroke=0)
+        can.rect(p2_expiration["x"] - 4, p2_expiration["y"] - 5,
+                 exp_width + 12, 18, fill=1, stroke=0)
 
         # Add expiration date digits (without slashes)
         can.setFillColor(black)
