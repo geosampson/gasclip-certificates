@@ -27,7 +27,12 @@ ENV/
 
 # Output files
 output/
+calibration_tests/*.pdf
+
+# Ignore all PDFs except templates
 *.pdf
+!templates/*.pdf
+!templates/*_clean.pdf
 
 # IDE
 .vscode/
