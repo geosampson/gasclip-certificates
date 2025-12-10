@@ -12,7 +12,7 @@ from pathlib import Path
 from PyPDF2 import PdfReader, PdfWriter
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
-from reportlab.lib.colors import black
+from reportlab.lib.colors import black, white
 import io
 
 
@@ -28,9 +28,9 @@ class DateEntry(ttk.Entry):
         """Auto-format date as DD/MM/YYYY"""
         if event.keysym in ('BackSpace', 'Delete', 'Left', 'Right', 'Up', 'Down', 'Tab'):
             return
-        
+
         text = self.get().replace('/', '')
-        
+
         # Only allow digits
         if text and not text.isdigit():
             self.delete(0, tk.END)
@@ -40,17 +40,15 @@ class DateEntry(ttk.Entry):
         # Limit to 8 digits
         if len(text) > 8:
             text = text[:8]
-        
+
         # Format with slashes
         formatted = text
         if len(text) >= 2:
-            formatted = text[:2]
-            if len(text) >= 4:
-                formatted += '/' + text[2:4]
-                if len(text) >= 5:
+            formatted = text[:2] + '/'
+            if len(text) > 2:
+                formatted += text[2:4]
+                if len(text) > 4:
                     formatted += '/' + text[4:8]
-            elif len(text) > 2:
-                formatted += '/' + text[2:]
         
         # Update the entry
         cursor_pos = self.index(tk.INSERT)
@@ -388,46 +386,75 @@ class GasClipCertificateGenerator:
         """Create a transparent PDF overlay with text at corrected positions"""
         packet = io.BytesIO()
         can = canvas.Canvas(packet, pagesize=A4)
-        
+
+        def cover_and_draw(text, x, y, font_name, font_size, padding=2, height=None):
+            """Cover existing text area before drawing updated text."""
+            text_width = can.stringWidth(text, font_name, font_size)
+            rect_height = height if height is not None else font_size + padding
+
+            can.setFillColor(white)
+            can.rect(x - padding, y - padding, text_width + (padding * 2), rect_height, fill=1, stroke=0)
+            can.setFillColor(black)
+            can.setFont(font_name, int(font_size))
+            can.drawString(x, y, text)
+
         can.setFont("Helvetica", 10)
         can.setFillColor(black)
         
         positions = product_info["positions"]
         
         # Page 1 overlays
-        can.drawString(positions["page1"]["serial"][0], positions["page1"]["serial"][1], 
-                      data["serial"])
-        can.drawString(positions["page1"]["activation_before"][0], 
-                      positions["page1"]["activation_before"][1], 
-                      data["activation"])
-        can.drawString(positions["page1"]["lot_number"][0], 
-                      positions["page1"]["lot_number"][1], 
-                      data["lot"])
-        can.drawString(positions["page1"]["gas_production"][0], 
-                      positions["page1"]["gas_production"][1], 
-                      data["gas_prod"])
-        can.drawString(positions["page1"]["calibration_date"][0], 
-                      positions["page1"]["calibration_date"][1], 
-                      data["calibration"])
+        font_name = "Helvetica"
+        font_size = 10
+        cover_and_draw(data["serial"], positions["page1"]["serial"][0],
+                       positions["page1"]["serial"][1], font_name, font_size, padding=3)
+        cover_and_draw(data["activation"], positions["page1"]["activation_before"][0],
+                       positions["page1"]["activation_before"][1], font_name, font_size, padding=2)
+        cover_and_draw(data["lot"], positions["page1"]["lot_number"][0],
+                       positions["page1"]["lot_number"][1], font_name, font_size, padding=3)
+        cover_and_draw(data["gas_prod"], positions["page1"]["gas_production"][0],
+                       positions["page1"]["gas_production"][1], font_name, font_size, padding=3)
+        cover_and_draw(data["calibration"], positions["page1"]["calibration_date"][0],
+                       positions["page1"]["calibration_date"][1], font_name, font_size, padding=3)
         
         can.showPage()
         
         # Page 2 overlays
-        can.drawString(positions["page2"]["serial"][0], positions["page2"]["serial"][1], 
-                      data["serial"])
-        
+        cover_and_draw(data["serial"], positions["page2"]["serial"][0],
+                       positions["page2"]["serial"][1], font_name, font_size, padding=3)
+
         # Activation date in boxes (individual digits)
         activation_digits = data["activation"].replace('/', '')
+        act_positions = positions["page2"]["activation_boxes"]
+        if act_positions:
+            xs = [p[0] for p in act_positions]
+            min_x, max_x = min(xs), max(xs)
+            y = act_positions[0][1]
+            width = (max_x - min_x) + 12
+            can.setFillColor(white)
+            can.rect(min_x - 4, y - 4, width + 8, 16, fill=1, stroke=0)
+            can.setFillColor(black)
+        can.setFont("Helvetica-Bold", 12)
         for i, digit in enumerate(activation_digits):
-            if i < len(positions["page2"]["activation_boxes"]):
-                x, y = positions["page2"]["activation_boxes"][i]
+            if i < len(act_positions):
+                x, y = act_positions[i]
                 can.drawString(x, y, digit)
-        
+
         # Calibration expiration date in boxes
         expiration_digits = data["calibration_exp"].replace('/', '')
+        exp_positions = positions["page2"]["expiration_boxes"]
+        if exp_positions:
+            xs = [p[0] for p in exp_positions]
+            min_x, max_x = min(xs), max(xs)
+            y = exp_positions[0][1]
+            width = (max_x - min_x) + 12
+            can.setFillColor(white)
+            can.rect(min_x - 4, y - 4, width + 8, 16, fill=1, stroke=0)
+            can.setFillColor(black)
+        can.setFont("Helvetica-Bold", 12)
         for i, digit in enumerate(expiration_digits):
-            if i < len(positions["page2"]["expiration_boxes"]):
-                x, y = positions["page2"]["expiration_boxes"][i]
+            if i < len(exp_positions):
+                x, y = exp_positions[i]
                 can.drawString(x, y, digit)
         
         can.save()

@@ -29,9 +29,9 @@ class DateEntry(ttk.Entry):
         """Auto-format date as DD/MM/YYYY"""
         if event.keysym in ('BackSpace', 'Delete', 'Left', 'Right', 'Up', 'Down', 'Tab'):
             return
-        
+
         text = self.get().replace('/', '')
-        
+
         # Only allow digits
         if text and not text.isdigit():
             self.delete(0, tk.END)
@@ -41,18 +41,16 @@ class DateEntry(ttk.Entry):
         # Limit to 8 digits
         if len(text) > 8:
             text = text[:8]
-        
+
         # Format with slashes
         formatted = text
         if len(text) >= 2:
-            formatted = text[:2]
-            if len(text) >= 4:
-                formatted += '/' + text[2:4]
-                if len(text) >= 5:
+            formatted = text[:2] + '/'
+            if len(text) > 2:
+                formatted += text[2:4]
+                if len(text) > 4:
                     formatted += '/' + text[4:8]
-            elif len(text) > 2:
-                formatted += '/' + text[2:]
-        
+
         # Update the entry
         cursor_pos = self.index(tk.INSERT)
         self.delete(0, tk.END)
@@ -343,51 +341,47 @@ class GasClipCertificateGenerator:
         """Create PDF overlay with white rectangles to cover old text, then add new text"""
         # Get coordinates for this product
         coords = get_coordinates(prefix)
-        
+
         packet = io.BytesIO()
         can = canvas.Canvas(packet, pagesize=A4)
+
+        def cover_and_draw(text, x, y, font_name, font_size, padding=2, height=None):
+            """Cover existing text area and draw new text precisely at the provided point."""
+            text_width = can.stringWidth(text, font_name, font_size)
+            rect_height = height if height is not None else font_size + padding
+
+            can.setFillColor(white)
+            can.rect(x - padding, y - padding, text_width + (padding * 2), rect_height, fill=1, stroke=0)
+            can.setFillColor(black)
+            can.setFont(font_name, int(font_size))
+            can.drawString(x, y, text)
         
         # Page 1 - Cover old text with white rectangles at EXACT coordinates, then add new text
         
         # Cover and replace serial number in middle section (Serial Number box)
         p1_serial = coords["page1"]["serial"]
-        can.setFillColor(white)
-        can.rect(p1_serial["x"] - 1, p1_serial["y"] - 2, 105, 18, fill=1, stroke=0)
-        can.setFillColor(black)
-        can.setFont("Helvetica-Bold", int(p1_serial["size"]))
-        can.drawString(p1_serial["x"], p1_serial["y"], data["serial"])
+        cover_and_draw(data["serial"], p1_serial["x"], p1_serial["y"],
+                       "Helvetica-Bold", p1_serial["size"], padding=3)
         
         # Cover and replace activation date (below serial in middle section)
         p1_act = coords["page1"]["activation_date"]
-        can.setFillColor(white)
-        can.rect(p1_act["x"], p1_act["y"] - 3, 70, 12, fill=1, stroke=0)
-        can.setFillColor(black)
-        can.setFont("Helvetica", int(p1_act["size"]))
-        can.drawString(p1_act["x"], p1_act["y"], data["activation"])
+        cover_and_draw(data["activation"], p1_act["x"], p1_act["y"],
+                       "Helvetica", p1_act["size"], padding=2)
         
         # Cover and replace lot number
         p1_lot = coords["page1"]["lot"]
-        can.setFillColor(white)
-        can.rect(p1_lot["x"], p1_lot["y"] - 2, 85, 16, fill=1, stroke=0)
-        can.setFillColor(black)
-        can.setFont("Helvetica-Bold", int(p1_lot["size"]))
-        can.drawString(p1_lot["x"], p1_lot["y"], data["lot"])
+        cover_and_draw(data["lot"], p1_lot["x"], p1_lot["y"],
+                       "Helvetica-Bold", p1_lot["size"], padding=3)
         
         # Cover and replace gas production date
         p1_gas = coords["page1"]["gas_prod"]
-        can.setFillColor(white)
-        can.rect(p1_gas["x"], p1_gas["y"] - 2, 95, 13, fill=1, stroke=0)
-        can.setFillColor(black)
-        can.setFont("Helvetica", int(p1_gas["size"]))
-        can.drawString(p1_gas["x"], p1_gas["y"], data["gas_prod"])
+        cover_and_draw(data["gas_prod"], p1_gas["x"], p1_gas["y"],
+                       "Helvetica", p1_gas["size"], padding=3)
         
         # Cover and replace calibration date
         p1_cal = coords["page1"]["calibration"]
-        can.setFillColor(white)
-        can.rect(p1_cal["x"], p1_cal["y"] - 2, 95, 16, fill=1, stroke=0)
-        can.setFillColor(black)
-        can.setFont("Helvetica-Bold", int(p1_cal["size"]))
-        can.drawString(p1_cal["x"], p1_cal["y"], data["calibration"])
+        cover_and_draw(data["calibration"], p1_cal["x"], p1_cal["y"],
+                       "Helvetica-Bold", p1_cal["size"], padding=3)
         
         can.showPage()
         
@@ -395,37 +389,42 @@ class GasClipCertificateGenerator:
         
         # Cover and replace serial number in middle section (sn: box)
         p2_serial = coords["page2"]["serial"]
-        can.setFillColor(white)
-        can.rect(p2_serial["x"] - 1, p2_serial["y"] - 2, 105, 18, fill=1, stroke=0)
-        can.setFillColor(black)
-        can.setFont('Helvetica-Bold', int(p2_serial["size"]))
-        can.drawString(p2_serial["x"], p2_serial["y"], data["serial"])
-        
+        cover_and_draw(data["serial"], p2_serial["x"], p2_serial["y"],
+                       'Helvetica-Bold', p2_serial["size"], padding=3)
+
         # Cover activation date boxes area
+        p2_activation = coords["page2"]["activation_boxes"]
+        activation_raw = data["activation"].replace('/', '')  # "10/02/2020" → "10022020"
+        spacing = p2_activation["spacing"]
+        activation_width = spacing * len(activation_raw)
         can.setFillColor(white)
-        can.rect(330, 470, 200, 25, fill=1, stroke=0)  # Cover old activation boxes
-        
+        can.rect(p2_activation["x"] - 2, p2_activation["y"] - 3,
+                 activation_width + 4, 16, fill=1, stroke=0)
+
         # Add activation date digits (without slashes, just the 8 digits)
         can.setFillColor(black)
-        activation_raw = data["activation"].replace('/', '')  # "10/02/2020" → "10022020"
-        start_x = 340
-        y = 480
-        spacing = 20
-        
+        can.setFont('Helvetica-Bold', 12)
+        start_x = p2_activation["x"]
+        y = p2_activation["y"]
+
         for i, digit in enumerate(activation_raw):
             x = start_x + (i * spacing)
             can.drawString(x, y, digit)
-        
+
         # Cover expiration date boxes area
+        p2_expiration = coords["page2"]["expiration_boxes"]
+        expiration_raw = data["calibration_exp"].replace('/', '')  # Remove slashes
+        exp_width = p2_expiration["spacing"] * len(expiration_raw)
         can.setFillColor(white)
-        can.rect(330, 390, 200, 25, fill=1, stroke=0)  # Cover old expiration boxes
-        
+        can.rect(p2_expiration["x"] - 2, p2_expiration["y"] - 3,
+                 exp_width + 4, 16, fill=1, stroke=0)
+
         # Add expiration date digits (without slashes)
         can.setFillColor(black)
-        expiration_raw = data["calibration_exp"].replace('/', '')  # Remove slashes
-        start_x = 340
-        y = 400
-        
+        can.setFont('Helvetica-Bold', 12)
+        start_x = p2_expiration["x"]
+        y = p2_expiration["y"]
+
         for i, digit in enumerate(expiration_raw):
             x = start_x + (i * spacing)
             can.drawString(x, y, digit)
