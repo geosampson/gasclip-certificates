@@ -411,42 +411,8 @@ class GasClipCertificateGenerator:
         cover_and_draw(data["serial"], p2_serial["x"], p2_serial["y"],
                        'Helvetica-Bold', p2_serial["size"], padding=4, min_width=140, height=22)
 
-        # Cover activation date boxes area
-        p2_activation = coords["page2"]["activation_boxes"]
-        activation_raw = data["activation"].replace('/', '')  # "10/02/2020" → "10022020"
-        spacing = p2_activation["spacing"]
-        activation_width = spacing * len(activation_raw)
-        can.setFillColor(white)
-        can.rect(p2_activation["x"] - 4, p2_activation["y"] - 5,
-                 activation_width + 12, 18, fill=1, stroke=0)
-
-        # Add activation date digits (without slashes, just the 8 digits)
-        can.setFillColor(black)
-        can.setFont('Helvetica-Bold', 12)
-        start_x = p2_activation["x"]
-        y = p2_activation["y"]
-
-        for i, digit in enumerate(activation_raw):
-            x = start_x + (i * spacing)
-            can.drawString(x, y, digit)
-
-        # Cover expiration date boxes area
-        p2_expiration = coords["page2"]["expiration_boxes"]
-        expiration_raw = data["calibration_exp"].replace('/', '')  # Remove slashes
-        exp_width = p2_expiration["spacing"] * len(expiration_raw)
-        can.setFillColor(white)
-        can.rect(p2_expiration["x"] - 4, p2_expiration["y"] - 5,
-                 exp_width + 12, 18, fill=1, stroke=0)
-
-        # Add expiration date digits (without slashes)
-        can.setFillColor(black)
-        can.setFont('Helvetica-Bold', 12)
-        start_x = p2_expiration["x"]
-        y = p2_expiration["y"]
-
-        for i, digit in enumerate(expiration_raw):
-            x = start_x + (i * spacing)
-            can.drawString(x, y, digit)
+        # Leave the activation and expiration boxes untouched on page 2 so the
+        # customer can fill them manually on the printed form.
         
         can.save()
         packet.seek(0)

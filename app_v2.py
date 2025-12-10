@@ -442,39 +442,8 @@ class GasClipCertificateGenerator:
         cover_and_draw(data["serial"], positions["page2"]["serial"][0],
                        positions["page2"]["serial"][1], font_name, font_size, padding=4, min_width=140, height=22)
 
-        # Activation date in boxes (individual digits)
-        activation_digits = data["activation"].replace('/', '')
-        act_positions = positions["page2"]["activation_boxes"]
-        if act_positions:
-            xs = [p[0] for p in act_positions]
-            min_x, max_x = min(xs), max(xs)
-            y = act_positions[0][1]
-            width = (max_x - min_x) + 12
-            can.setFillColor(white)
-            can.rect(min_x - 6, y - 6, width + 14, 18, fill=1, stroke=0)
-            can.setFillColor(black)
-        can.setFont("Helvetica-Bold", 12)
-        for i, digit in enumerate(activation_digits):
-            if i < len(act_positions):
-                x, y = act_positions[i]
-                can.drawString(x, y, digit)
-
-        # Calibration expiration date in boxes
-        expiration_digits = data["calibration_exp"].replace('/', '')
-        exp_positions = positions["page2"]["expiration_boxes"]
-        if exp_positions:
-            xs = [p[0] for p in exp_positions]
-            min_x, max_x = min(xs), max(xs)
-            y = exp_positions[0][1]
-            width = (max_x - min_x) + 12
-            can.setFillColor(white)
-            can.rect(min_x - 6, y - 6, width + 14, 18, fill=1, stroke=0)
-            can.setFillColor(black)
-        can.setFont("Helvetica-Bold", 12)
-        for i, digit in enumerate(expiration_digits):
-            if i < len(exp_positions):
-                x, y = exp_positions[i]
-                can.drawString(x, y, digit)
+        # Leave the activation and expiration date boxes untouched on page 2 so
+        # the customer can fill them manually on the printed form.
         
         can.save()
         packet.seek(0)
