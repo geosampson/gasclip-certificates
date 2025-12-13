@@ -15,6 +15,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.colors import black, white
 import io
 from product_coordinates import get_coordinates
+import json
 
 
 class DateEntry(ttk.Entry):
@@ -145,6 +146,24 @@ class GasClipCertificateGenerator:
         
         self.setup_ui()
         self.setup_keyboard_navigation()
+        self.load_calibrated_coordinates()
+    
+    def load_calibrated_coordinates(self):
+        """Load calibrated coordinates if available and display status"""
+        calibrated_file = Path(__file__).parent / "calibrated_coordinates.json"
+        
+        if calibrated_file.exists():
+            try:
+                with open(calibrated_file, 'r') as f:
+                    self.calibrated_coords = json.load(f)
+                print("✓ Loaded calibrated coordinates from calibrator")
+                self.status_label.config(text="Using calibrated coordinates (run coordinate_calibrator.py to adjust)")
+            except Exception as e:
+                print(f"Warning: Could not load calibrated coordinates: {e}")
+                self.calibrated_coords = None
+        else:
+            self.calibrated_coords = None
+            print("Using default coordinates (run coordinate_calibrator.py to create custom coordinates)")
     
     def setup_ui(self):
         """Setup the user interface"""
